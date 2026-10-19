@@ -315,130 +315,26 @@ server <- function(input, output, session) {
       setView(lng = -70.0, lat = 41.5, zoom = 6)
   })
   
-  # Reactive map layer for updating pie charts 
-  # observe({ 
-  #   data <- my_map_data() 
-  #   
-  #   if (nrow(data) > 0) { 
-  #     stages <- c('Immature', 'Developing', 'Spawning', 'Spent', 'Resting') 
-  #     stage_colors <- c("#cccccc", "#56B4E9", "#FFC72C", "#2ecc71", '#CC79A7') 
-  #     calculated_widths <- 18 + (data$Total_Samples * 0.15) 
-  #     
-  #     popup_html_strings <- sprintf(
-  #       "<div style='font-family: Arial; padding: 3px;'>
-  #       <strong>Stat Area:</strong> %s<br/> 
-  #       <strong>Total Fish Sampled:</strong> %s<br/> 
-  #       <strong>Min & Max Weight:</strong> %s to %s g <br/> 
-  #        <strong>Min & Max Length:</strong> %s to %s cm <br/> 
-  #        <strong>Avg Weight:</strong> %s g <br/> 
-  #       <strong>Avg Length:</strong> %s cm
-  #     </div>", 
-  #       data$area_code, 
-  #       data$Total_Samples, 
-  #       data$Min_Weight, 
-  #       data$Max_Weight, 
-  #       data$Min_Length/10, 
-  #       data$Max_Length/10, 
-  #       round(data$Avg_Weight, 1),
-  #       round(data$Avg_Length/10, 1)
-  #     )
-  #    
-  #      # Extract matrix explicitly for leaflet.minicharts compatibility
-  #     chart_matrix <- as.matrix(data[, stages])
-  #     mode(chart_matrix) <- "numeric"
-  #     
-  #     # Completely redraw the charts safely across weeks
-  #     leafletProxy("maturity_map", data = data) |> 
-  #       clearMinicharts() |> 
-  #       addMinicharts( 
-  #         lng = data$stat.lon, 
-  #         lat = data$stat.lat, 
-  #         type = "pie", 
-  #         chartdata = chart_matrix, #data[, stages], 
-  #         colorPalette = stage_colors, 
-  #         layerId = as.character(data$area_code),
-  #         width = calculated_widths, 
-  #         popup = popupArgs(html = popup_html_strings),
-  #         transitionTime = 0, 
-  #         legendPosition = "topleft"
-  #       ) 
-  #   } else { 
-  #     leafletProxy("maturity_map") |> 
-  #       clearMinicharts() 
-  #   } 
-  # })
-  # observeEvent(my_map_data(), { 
-  #   data <- my_map_data() 
-  #   
-  #   # 1. Always clear previous minicharts
-  #   leafletProxy("maturity_map") |> clearMinicharts()
-  #   
-  #   if (!is.null(data) && nrow(data) > 0) { 
-  #     stages <- c('Immature', 'Developing', 'Spawning', 'Spent', 'Resting') 
-  #     stage_colors <- c("#cccccc", "#56B4E9", "#FFC72C", "#2ecc71", '#CC79A7') 
-  #     
-  #     # 2. Extract coordinates as clean, unclassed numeric vectors
-  #     lons <- as.numeric(as.character(data$stat.lon))
-  #     lats <- as.numeric(as.character(data$stat.lat))
-  #     widths <- as.numeric(18 + (data$Total_Samples * 0.15))
-  #     
-  #     # 3. Create a clean matrix stripped of data.frame classes
-  #     mat <- as.matrix(data[, stages])
-  #     chart_mat <- matrix(
-  #       as.numeric(mat), 
-  #       nrow = nrow(mat), 
-  #       ncol = ncol(mat),
-  #       dimnames = list(NULL, stages) # Preserve stage column names for legend
-  #     )
-  #     
-  #     # 4. Strip linebreaks and special quotes from HTML popups
-  #     popups <- paste0(
-  #       "<div>",
-  #       "<strong>Stat Area:</strong> ", data$area_code, "<br/>",
-  #       "<strong>Total Fish Sampled:</strong> ", data$Total_Samples, "<br/>",
-  #       "<strong>Min & Max Weight:</strong> ", data$Min_Weight, " to ", data$Max_Weight, " g<br/>",
-  #       "<strong>Min & Max Length:</strong> ", data$Min_Length/10, " to ", data$Max_Length/10, " cm<br/>",
-  #       "<strong>Avg Weight:</strong> ", round(data$Avg_Weight, 1), " g<br/>",
-  #       "<strong>Avg Length:</strong> ", round(data$Avg_Length/10, 1), " cm",
-  #       "</div>"
-  #     )
-  #     
-  #     # 5. Render minicharts using explicit numeric variables
-  #     leafletProxy("maturity_map") |> 
-  #       addMinicharts( 
-  #         lng = lons, 
-  #         lat = lats, 
-  #         type = "pie", 
-  #         chartdata = chart_mat, 
-  #         colorPalette = stage_colors, 
-  #         layerId = as.character(data$area_code),
-  #         width = widths, 
-  #         popup = popupArgs(html = popups),
-  #         transitionTime = 0, 
-  #         legendPosition = "topleft"
-  #       ) 
-  #   } 
-  # })
-  
+ 
   # Reactive map layer for updating pie charts (Timing-safe for Shinylive)
   observeEvent(list(my_map_data(), input$maturity_map_bounds), { 
     # Wait until both data and map bounds are initialized in JS
     req(input$maturity_map_bounds)
     data <- my_map_data() 
     
-    # 1. Always clear previous minicharts
+    # clear previous minicharts
     leafletProxy("maturity_map") |> leaflet.minicharts::clearMinicharts()
     
     if (!is.null(data) && nrow(data) > 0) { 
       stages <- c('Immature', 'Developing', 'Spawning', 'Spent', 'Resting') 
       stage_colors <- c("#cccccc", "#56B4E9", "#FFC72C", "#2ecc71", '#CC79A7') 
       
-      # 2. Extract coordinates as clean numeric vectors
+      # Extract coordinates as clean numeric vectors
       lons <- as.numeric(data$stat.lon)
       lats <- as.numeric(data$stat.lat)
       widths <- as.numeric(18 + (data$Total_Samples * 0.15))
       
-      # 3. Create a clean matrix
+      # Create a clean matrix
       mat <- as.matrix(data[, stages])
       chart_mat <- matrix(
         as.numeric(mat), 
@@ -447,7 +343,7 @@ server <- function(input, output, session) {
         dimnames = list(NULL, stages)
       )
       
-      # 4. Clean HTML popup strings
+      # Clean HTML popup strings
       popups <- paste0(
         "<div>",
         "<strong>Stat Area:</strong> ", data$area_code, "<br/>",
@@ -459,7 +355,7 @@ server <- function(input, output, session) {
         "</div>"
       )
       
-      # 5. Render minicharts safely
+      # Render minicharts safely
       leafletProxy("maturity_map") |> 
         leaflet.minicharts::addMinicharts( 
           lng = lons, 
@@ -514,7 +410,7 @@ server <- function(input, output, session) {
         values_to = "Count"
       ) 
     
-    # 2. Filter for North Region
+    # Filter for North Region
     p_north <- plot_ly(
       data = dplyr::filter(long_data, region == "North"),
       labels = ~Stage,
@@ -525,7 +421,7 @@ server <- function(input, output, session) {
       domain = list(x = c(0, 0.45))
     ) 
     
-    # 3. Filter for South Region
+    # Filter for South Region
     p_south <- plot_ly(
       data = dplyr::filter(long_data, region == "South"),
       labels = ~Stage,
@@ -536,7 +432,7 @@ server <- function(input, output, session) {
       domain = list(x = c(0.55, 1))
     ) 
     
-    # 4. Combine into one layout
+    # Combine into one layout
     subplot(p_north, p_south, nrows = 1) |>
       layout(
         showlegend = FALSE,
