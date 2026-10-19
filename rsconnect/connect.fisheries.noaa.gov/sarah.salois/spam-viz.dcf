@@ -1,0 +1,10 @@
+name: spam-viz
+title: SPAM-Viz
+username: sarah.salois
+account: sarah.salois
+server: connect.fisheries.noaa.gov
+hostUrl: https://connect.fisheries.noaa.gov/__api__
+appId: 762
+bundleId: 7463
+url: https://connect.fisheries.noaa.gov/content/9b9f52c7-1de6-4efe-ac29-3eb29cb23aef/
+version: 1
